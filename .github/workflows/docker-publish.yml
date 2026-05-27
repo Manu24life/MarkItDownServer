@@ -39,4 +39,18 @@ jobs:
             ghcr.io/${{ env.REPO_OWNER }}/mark-it-down:latest
             ghcr.io/${{ env.REPO_OWNER }}/mark-it-down:${{ github.sha }}
 
-            
+      - name: Install doctl
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Connect to DigitalOcean Kubernetes
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: doctl kubernetes cluster kubeconfig save k8s-1-36-0-do-0-lon1-1779874547211
+
+      - name: Update image in Kubernetes
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          kubectl set image deployment/markitdown \
+            markitdown=ghcr.io/${{ env.REPO_OWNER }}/mark-it-down:${{ github.sha }}
